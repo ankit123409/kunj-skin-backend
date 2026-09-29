@@ -6,23 +6,22 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-export const uploadToCloudinary = async (image) => {
-  if (!image) {
-    throw new Error("Image is required");
+export const uploadToCloudinary = async (file, resourceType = "image") => {
+  if (!file) {
+    throw new Error(`${resourceType === "video" ? "Video" : "Image"} is required`);
   }
 
-  if (typeof image !== "string") {
-    throw new Error("Image must be a string");
+  if (typeof file !== "string") {
+    throw new Error(`${resourceType === "video" ? "Video" : "Image"} must be a string`);
   }
 
-  // If image is already a Cloudinary or remote URL, keep it as-is.
-  if (image.startsWith("http://") || image.startsWith("https://")) {
-    return image;
+  if (file.startsWith("http://") || file.startsWith("https://")) {
+    return file;
   }
 
-  const result = await cloudinary.uploader.upload(image, {
+  const result = await cloudinary.uploader.upload(file, {
     folder: "ecommerce-products",
-    resource_type: "image"
+    resource_type: resourceType
   });
 
   return result.secure_url;

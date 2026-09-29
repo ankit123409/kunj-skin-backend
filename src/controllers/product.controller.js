@@ -3,16 +3,22 @@ import { uploadToCloudinary } from "../config/cloudinary.js";
 
 export const createProduct = async (req, res, next) => {
   try {
-    const { image, title, size, price, description } = req.body;
+    const { image, video, title, size, price, description } = req.body;
 
     let imageUrl = image;
+    let videoUrl = video;
 
     if (image && !/^https?:\/\//i.test(image)) {
-      imageUrl = await uploadToCloudinary(image);
+      imageUrl = await uploadToCloudinary(image, "image");
+    }
+
+    if (video && !/^https?:\/\//i.test(video)) {
+      videoUrl = await uploadToCloudinary(video, "video");
     }
 
     const product = await Product.create({
       image: imageUrl,
+      video: videoUrl,
       title,
       size,
       price,
