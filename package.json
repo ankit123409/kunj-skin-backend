@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "vercel-build": "node src/server.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
