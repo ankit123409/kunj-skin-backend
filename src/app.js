@@ -32,6 +32,14 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Kunj Skin API is running",
+  });
+});
+
+
 app.use(notFound);
 app.use(errorHandler);
 
