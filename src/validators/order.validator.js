@@ -41,5 +41,13 @@ export const orderValidator = [
   body("address.pincode")
     .trim()
     .notEmpty()
-    .withMessage("Pincode is required")
+    .withMessage("Pincode is required"),
+
+  // 1 = cash, 2 = card, 3 = upi
+  body("paymentType")
+    .notEmpty()
+    .withMessage("Payment type is required")
+    .isInt({ min: 1, max: 3 })
+    .withMessage("Payment type must be 1 (cash), 2 (card), or 3 (upi)")
+    .toInt()
 ];

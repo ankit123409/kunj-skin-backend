@@ -5,6 +5,8 @@ import morgan from "morgan";
 import authRoutes from "./routes/auth.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import orderRoutes from "./routes/order.routes.js";
+import addressRoutes from "./routes/address.routes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import { notFound, errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
@@ -31,7 +33,8 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
-
+app.use("/api/addresses", addressRoutes);
+app.use("/api/payment", paymentRoutes);
 app.get("/", (req, res) => {
   res.json({
     success: true,
