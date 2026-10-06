@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import Order from "../models/Order.js";
 import razorpay from "../config/razorpay.js";
+import { sendOrderConfirmationEmail } from "../utils/email.js";
 
 // Standalone Razorpay order (optional / testing)
 export const createOrder = async (req, res) => {
@@ -90,6 +91,16 @@ export const verifyPayment = async (req, res) => {
     order.razorpayPaymentId = razorpay_payment_id;
     order.status = "confirmed";
     await order.save();
+
+    console.log("Order created successfully");
+
+    try {
+      await sendOrderConfirmationEmail(order);
+      console.log("Order confirmation email sent successfully");
+    } catch (emailError) {
+      console.error("Order confirmation email failed");
+      console.error("Order email failed:", emailError);
+    }
 
     return res.status(200).json({
       success: true,

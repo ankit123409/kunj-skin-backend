@@ -4,16 +4,21 @@ import { generateToken } from "../utils/jwt.js";
 
 export const register = async (req, res, next) => {
   try {
-    const { name, mobile, password } = req.body;
-    console.log("fkvckfvn");
-    
+    const { name, mobile, email, password } = req.body;
 
-    const existingUser = await User.findOne({ mobile });
+    const existingUser = await User.findOne({
+      $or: [{ mobile }, { email: email.toLowerCase() }]
+    });
 
     if (existingUser) {
+      const message =
+        existingUser.mobile === mobile
+          ? "Mobile number already registered"
+          : "Email already registered";
+
       return res.status(409).json({
         success: false,
-        message: "Mobile number already registered"
+        message
       });
     }
 
@@ -22,6 +27,7 @@ export const register = async (req, res, next) => {
     const user = await User.create({
       name,
       mobile,
+      email,
       password: hashedPassword
     });
 
@@ -35,6 +41,7 @@ export const register = async (req, res, next) => {
         id: user._id,
         name: user.name,
         mobile: user.mobile,
+        email: user.email,
         role: user.role
       }
     });
@@ -75,6 +82,7 @@ export const login = async (req, res, next) => {
         id: user._id,
         name: user.name,
         mobile: user.mobile,
+        email: user.email,
         role: user.role
       }
     });
@@ -90,6 +98,7 @@ export const profile = async (req, res) => {
       id: req.user._id,
       name: req.user.name,
       mobile: req.user.mobile,
+      email: req.user.email,
       role: req.user.role
     }
   });

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import razorpay from "../config/razorpay.js";
+import { sendOrderConfirmationEmail } from "../utils/email.js";
 
 const PAYMENT_TYPE = {
   CASH: 1,
@@ -13,6 +14,14 @@ export const createOrder = async (req, res, next) => {
   try {
     const { items, address, paymentType } = req.body;
     const type = Number(paymentType);
+    const customerEmail = (req.user.email || "").trim().toLowerCase();
+
+    if (!customerEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Email not found on your account. Please register with an email"
+      });
+    }
 
     if (![PAYMENT_TYPE.CASH, PAYMENT_TYPE.CARD, PAYMENT_TYPE.UPI].includes(type)) {
       return res.status(400).json({
@@ -68,11 +77,22 @@ export const createOrder = async (req, res, next) => {
         user: req.user._id,
         items: orderItems,
         address,
+        customerEmail,
         totalAmount,
         paymentType: type,
         paymentStatus: "cod",
         status: "pending"
       });
+
+      console.log("Order created successfully");
+
+      try {
+        await sendOrderConfirmationEmail(order);
+        console.log("Order confirmation email sent successfully");
+      } catch (emailError) {
+        console.error("Order confirmation email failed");
+        console.error("Order email failed:", emailError);
+      }
 
       return res.status(201).json({
         success: true,
@@ -96,12 +116,15 @@ export const createOrder = async (req, res, next) => {
       user: req.user._id,
       items: orderItems,
       address,
+      customerEmail,
       totalAmount,
       paymentType: type,
       paymentStatus: "pending",
       razorpayOrderId: razorpayOrder.id,
       status: "pending"
     });
+
+    console.log("Order created successfully");
 
     return res.status(201).json({
       success: true,

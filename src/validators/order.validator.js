@@ -43,6 +43,8 @@ export const orderValidator = [
     .notEmpty()
     .withMessage("Pincode is required"),
 
+  body("customerEmail").optional({ values: "falsy" }),
+
   // 1 = cash, 2 = card, 3 = upi
   body("paymentType")
     .notEmpty()

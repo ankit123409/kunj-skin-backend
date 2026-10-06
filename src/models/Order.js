@@ -66,6 +66,12 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: 0
     },
+    customerEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: ""
+    },
     // 1 = cash, 2 = card, 3 = upi
     paymentType: {
       type: Number,

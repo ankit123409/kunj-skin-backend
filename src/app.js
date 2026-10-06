@@ -7,6 +7,7 @@ import productRoutes from "./routes/product.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import addressRoutes from "./routes/address.routes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import reviewRoutes from "./routes/review.routes.js";
 import { notFound, errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
@@ -35,6 +36,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/addresses", addressRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/reviews", reviewRoutes);
 app.get("/", (req, res) => {
   res.json({
     success: true,
