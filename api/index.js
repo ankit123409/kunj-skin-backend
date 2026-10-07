@@ -4,13 +4,20 @@ import { connectDB } from "../src/config/db.js";
 
 let dbPromise;
 
+const isWhatsAppWebhook = (req) => {
+  const path = req.url?.split("?")[0] || "";
+  return path === "/api/whatsapp/webhook";
+};
+
 export default async function handler(req, res) {
   try {
-    if (!dbPromise) {
-      dbPromise = connectDB();
-    }
+    if (!isWhatsAppWebhook(req)) {
+      if (!dbPromise) {
+        dbPromise = connectDB();
+      }
 
-    await dbPromise;
+      await dbPromise;
+    }
 
     return app(req, res);
   } catch (error) {
@@ -18,7 +25,7 @@ export default async function handler(req, res) {
 
     return res.status(500).json({
       success: false,
-      message: "Database connection failed",
+      message: "Database connection failed"
     });
   }
 }

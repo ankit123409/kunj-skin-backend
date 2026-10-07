@@ -17,4 +17,28 @@ const startServer = async () => {
   }
 };
 
-startServer();
+const isWhatsAppWebhook = (req) => {
+  const path = req.url?.split("?")[0] || "";
+  return path === "/api/whatsapp/webhook";
+};
+
+export default async function handler(req, res) {
+  try {
+    if (!isWhatsAppWebhook(req)) {
+      await connectDB();
+    }
+
+    return app(req, res);
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+}
+
+if (!process.env.VERCEL) {
+  startServer();
+}
