@@ -9,6 +9,7 @@ import addressRoutes from "./routes/address.routes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import whatsappRoutes from "./routes/whatsapp.routes.js";
+import couponRoutes from "./routes/coupon.routes.js";
 import { notFound, errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
@@ -39,6 +40,7 @@ app.use("/api/addresses", addressRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
+app.use("/api/coupons", couponRoutes);
 app.get("/", (req, res) => {
   res.json({
     success: true,

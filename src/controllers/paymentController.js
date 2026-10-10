@@ -2,6 +2,7 @@ import crypto from "crypto";
 import Order from "../models/Order.js";
 import razorpay from "../config/razorpay.js";
 import { sendOrderConfirmationEmail } from "../utils/email.js";
+import { incrementCouponUsage } from "../services/couponService.js";
 
 // Standalone Razorpay order (optional / testing)
 export const createOrder = async (req, res) => {
@@ -90,6 +91,15 @@ export const verifyPayment = async (req, res) => {
     order.paymentStatus = "paid";
     order.razorpayPaymentId = razorpay_payment_id;
     order.status = "confirmed";
+
+    if (order.couponId && !order.couponUsageCounted) {
+      const updatedCoupon = await incrementCouponUsage(order.couponId);
+
+      if (updatedCoupon) {
+        order.couponUsageCounted = true;
+      }
+    }
+
     await order.save();
 
     console.log("Order created successfully");

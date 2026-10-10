@@ -45,6 +45,8 @@ export const orderValidator = [
 
   body("customerEmail").optional({ values: "falsy" }),
 
+  body("couponCode").optional({ values: "falsy" }).trim(),
+
   // 1 = cash, 2 = card, 3 = upi
   body("paymentType")
     .notEmpty()

@@ -43,7 +43,7 @@ export const addReview = async (req, res, next) => {
 
     const populated = await Review.findById(newReview._id)
       .populate("user_id", "name mobile")
-      .populate("product_id", "title image price");
+      .populate("product_id", "title image images sellingPrice actualMrp discount");
 
     res.status(201).json({
       success: true,
@@ -59,7 +59,7 @@ export const getReviews = async (req, res, next) => {
   try {
     const reviews = await Review.find()
       .populate("user_id", "name mobile")
-      .populate("product_id", "title image price")
+      .populate("product_id", "title image images sellingPrice actualMrp discount")
       .sort({ createdAt: -1 });
 
     res.json({

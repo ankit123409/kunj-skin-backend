@@ -61,10 +61,51 @@ const orderSchema = new mongoose.Schema(
       type: addressSchema,
       required: true
     },
+    couponCode: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: null
+    },
+    couponId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Coupon",
+      default: null
+    },
+    discountPercentage: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0
+    },
+    discountAmount: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    subtotal: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    shippingAmount: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
+    taxAmount: {
+      type: Number,
+      min: 0,
+      default: 0
+    },
     totalAmount: {
       type: Number,
       required: true,
       min: 0
+    },
+    couponUsageCounted: {
+      type: Boolean,
+      default: false
     },
     customerEmail: {
       type: String,

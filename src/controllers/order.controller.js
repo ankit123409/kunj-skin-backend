@@ -3,6 +3,11 @@ import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import razorpay from "../config/razorpay.js";
 import { sendOrderConfirmationEmail } from "../utils/email.js";
+import {
+  applyCouponToItems,
+  CouponError,
+  incrementCouponUsage
+} from "../services/couponService.js";
 
 const PAYMENT_TYPE = {
   CASH: 1,
@@ -10,9 +15,18 @@ const PAYMENT_TYPE = {
   UPI: 3
 };
 
+const ALLOWED_STATUSES = [
+  "pending",
+  "confirmed",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled"
+];
+
 export const createOrder = async (req, res, next) => {
   try {
-    const { items, address, paymentType } = req.body;
+    const { items, address, paymentType, couponCode } = req.body;
     const type = Number(paymentType);
     const customerEmail = (req.user.email || "").trim().toLowerCase();
 
@@ -51,7 +65,6 @@ export const createOrder = async (req, res, next) => {
     }
 
     const orderItems = [];
-    let totalAmount = 0;
 
     for (const item of items) {
       const product = products.find(
@@ -60,25 +73,78 @@ export const createOrder = async (req, res, next) => {
 
       const quantity = Number(item.quantity);
 
+      const itemPrice = Number(product.sellingPrice ?? product.price ?? 0);
+
       orderItems.push({
         product: product._id,
         title: product.title,
-        image: product.image,
-        price: product.price,
+        image: product.image || product.images?.[0] || "",
+        price: itemPrice,
         quantity
       });
-
-      totalAmount += product.price * quantity;
     }
+
+    let pricing;
+
+    try {
+      pricing = await applyCouponToItems({
+        code: couponCode,
+        orderItems,
+        userId: req.user._id
+      });
+    } catch (error) {
+      if (error instanceof CouponError) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message
+        });
+      }
+
+      throw error;
+    }
+
+    const {
+      couponId,
+      couponCode: appliedCouponCode,
+      discountPercentage,
+      discountAmount,
+      subtotal,
+      shippingAmount,
+      taxAmount,
+      totalAmount
+    } = pricing;
 
     // Cash on delivery — place order immediately
     if (type === PAYMENT_TYPE.CASH) {
+      let couponUsageCounted = false;
+
+      if (couponId) {
+        const updatedCoupon = await incrementCouponUsage(couponId);
+
+        if (!updatedCoupon) {
+          return res.status(400).json({
+            success: false,
+            message: "This coupon has reached its usage limit"
+          });
+        }
+
+        couponUsageCounted = true;
+      }
+
       const order = await Order.create({
         user: req.user._id,
         items: orderItems,
         address,
         customerEmail,
+        couponCode: appliedCouponCode,
+        couponId,
+        discountPercentage,
+        discountAmount,
+        subtotal,
+        shippingAmount,
+        taxAmount,
         totalAmount,
+        couponUsageCounted,
         paymentType: type,
         paymentStatus: "cod",
         status: "pending"
@@ -117,7 +183,15 @@ export const createOrder = async (req, res, next) => {
       items: orderItems,
       address,
       customerEmail,
+      couponCode: appliedCouponCode,
+      couponId,
+      discountPercentage,
+      discountAmount,
+      subtotal,
+      shippingAmount,
+      taxAmount,
       totalAmount,
+      couponUsageCounted: false,
       paymentType: type,
       paymentStatus: "pending",
       razorpayOrderId: razorpayOrder.id,
@@ -214,16 +288,7 @@ export const updateOrderStatus = async (req, res, next) => {
   try {
     const { status } = req.body;
 
-    const allowedStatuses = [
-      "pending",
-      "confirmed",
-      "processing",
-      "shipped",
-      "delivered",
-      "cancelled"
-    ];
-
-    if (!allowedStatuses.includes(status)) {
+    if (!ALLOWED_STATUSES.includes(status)) {
       return res.status(400).json({
         success: false,
         message: "Invalid order status"
@@ -247,6 +312,61 @@ export const updateOrderStatus = async (req, res, next) => {
       success: true,
       message: "Order status updated",
       data: order
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const bulkUpdateOrderStatus = async (req, res, next) => {
+  try {
+    const { orderIds, status } = req.body;
+
+    if (!Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Select at least one order"
+      });
+    }
+
+    if (!ALLOWED_STATUSES.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order status"
+      });
+    }
+
+    if (orderIds.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
+      return res.status(400).json({
+        success: false,
+        message: "One or more order IDs are invalid"
+      });
+    }
+
+    const result = await Order.updateMany(
+      { _id: { $in: orderIds } },
+      { $set: { status } },
+      { runValidators: true }
+    );
+
+    const orders = await Order.find({ _id: { $in: orderIds } }).sort({
+      createdAt: -1
+    });
+
+    if (orders.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No matching orders found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Order status updated",
+      matched: result.matchedCount,
+      modified: result.modifiedCount,
+      count: orders.length,
+      data: orders
     });
   } catch (error) {
     next(error);
